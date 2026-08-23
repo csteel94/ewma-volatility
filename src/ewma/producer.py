@@ -80,14 +80,34 @@ class MarketDataProducer:
 
 
 def run() -> None:
-    """Generate and publish a continuous stream of DJIA prices."""
+    """Generate and continuously publish prices for four indices."""
 
-    generator = GBMPriceGenerator(
-        initial_price=100.0,
-        mu=0.05,
-        sigma=0.20,
-        dt=1 / 252,
-    )
+    generators = {
+        "S&P500": GBMPriceGenerator(
+            initial_price=100.0,
+            mu=0.05,
+            sigma=0.20,
+            dt=1 / 252,
+        ),
+        "NASQAQ": GBMPriceGenerator(
+            initial_price=100.0,
+            mu=0.04,
+            sigma=0.18,
+            dt=1 / 252,
+        ),
+        "DJIA": GBMPriceGenerator(
+            initial_price=100.0,
+            mu=0.045,
+            sigma=0.22,
+            dt=1 / 252,
+        ),
+        "Russell2000": GBMPriceGenerator(
+            initial_price=100.0,
+            mu=0.06,
+            sigma=0.24,
+            dt=1 / 252,
+        ),
+    }
 
     producer = MarketDataProducer(
         bootstrap_servers="localhost:9092",
@@ -96,20 +116,21 @@ def run() -> None:
 
     try:
         while True:
-            price = generator.generate_next_price()
+            for index, generator in generators.items():
+                price = generator.generate_next_price()
 
-            producer.publish_price(
-                index="DJIA",
-                price=price,
-            )
+                producer.publish_price(
+                    index=index,
+                    price=price,
+                )
 
+            producer.flush()
             time.sleep(1)
 
     except KeyboardInterrupt:
         print("Stopping market data producer.")
 
     finally:
-        producer.flush()
         producer.close()
 
 
