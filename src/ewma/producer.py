@@ -89,7 +89,7 @@ def run() -> None:
             sigma=0.20,
             dt=1 / 252,
         ),
-        "NASQAQ": GBMPriceGenerator(
+        "NASDAQ": GBMPriceGenerator(
             initial_price=100.0,
             mu=0.04,
             sigma=0.18,
