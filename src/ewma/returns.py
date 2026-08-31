@@ -1,7 +1,6 @@
 import math
 
 
-
 class ReturnCalculator:
     """Calculate log returns from incoming market prices."""
 
