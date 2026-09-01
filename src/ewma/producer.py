@@ -55,13 +55,14 @@ class MarketDataProducer:
             value_serializer=lambda value: json.dumps(value).encode("utf-8"),
         )
 
-    def publish_price(self, index: str, price: float) -> None:
+    def publish_price(self, index: str, price: float, sequence_id: int) -> None:
         """Publish a market price to Kafka."""
 
         message = {
             "index": index,
             "price": price,
             "timestamp": time.time(),
+            "sequence_id": sequence_id,
         }
 
         self.producer.send(self.topic, value=message)
@@ -114,14 +115,19 @@ def run() -> None:
         topic="ewma_market_ticks",
     )
 
+    sequence_id = 0
+
     try:
         while True:
+            sequence_id += 1
+
             for index, generator in generators.items():
                 price = generator.generate_next_price()
 
                 producer.publish_price(
                     index=index,
                     price=price,
+                    sequence_id = sequence_id,
                 )
 
             producer.flush()
