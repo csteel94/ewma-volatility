@@ -1,4 +1,6 @@
-from src.ewma.producer import GBMPriceGenerator
+from unittest.mock import MagicMock
+
+from src.ewma.producer import GBMPriceGenerator, MarketDataProducer
 
 
 def test_generated_price_is_positive():
@@ -14,7 +16,20 @@ def test_generated_price_is_positive():
     assert price > 0
 
 
+def test_publish_price_includes_sequence_id():
+    producer = MarketDataProducer.__new__(MarketDataProducer)
+    producer.topic = "test_topic"
+    producer.producer = MagicMock()
 
+    producer.publish_price(
+        index="S&P500",
+        price=100.0,
+        sequence_id=42,
+    )
+
+    sent_message = producer.producer.send.call_args.kwargs["value"]
+
+    assert sent_message["sequence_id"] == 42
 
 
 
