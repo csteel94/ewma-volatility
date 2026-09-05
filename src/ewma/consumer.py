@@ -5,6 +5,7 @@ import numpy as np
 from kafka import KafkaConsumer
 
 from src.ewma.covariance import EWMACovarianceCalculator
+from src.ewma.metrics import PerformanceMetrics
 from src.ewma.portfolio import PortfolioRiskCalculator
 from src.ewma.returns import ReturnCalculator
 from src.ewma.variance import EWMAVarianceCalculator
@@ -30,10 +31,12 @@ class MarketDataConsumer:
         auto_offset_reset="earliest",
         enable_auto_commit=True,)
 
+
         self.return_calculator = ReturnCalculator()
         self.variance_calculator = EWMAVarianceCalculator()
         self.covariance_calculator = EWMACovarianceCalculator()
         self.portfolio_calculator = PortfolioRiskCalculator(np.array([4000, 3000, 1000, 2000]))
+        self.metrics = PerformanceMetrics()
 
         self.return_buffer: dict[int, dict[str, float]] = {}
 
@@ -58,6 +61,7 @@ class MarketDataConsumer:
                 data = message.value
 
                 index, price, latency, sequence_id = self.process_message(data)
+                self.metrics.record_message(latency)
 
                 return_value = self.return_calculator.calculate_return(index, price)
 
@@ -97,6 +101,14 @@ class MarketDataConsumer:
 
         finally:
             self.consumer.close()
+
+            summary = self.metrics.calculate_summary()
+
+            print("\nPerformance Summary")
+            print("-------------------")
+
+            for metric, value in summary.items():
+                print(f"{metric}: {value}")
 
 
 
